@@ -122,9 +122,14 @@ def worker(graph, input_q, output_q):
 
 def get_coordinates(results):
     """
-    Get x and y coordinates from YOLO classification
+    Get x and y coordinates from YOLO classification. Returned as dictionary from classification
+    to (x,y)
     """
-    pass
+    coords = {}
+    for i in range(len(results)):
+        coords[results[i][0]] = (results[i][1],results[i][2])
+    print(coords)
+    return coords
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -174,6 +179,7 @@ if __name__ == '__main__':
         input_q.put(frame)
         t = time.time()
         (img, results, img_width, img_height) = output_q.get()
+        get_coordinates(results)
         show_results(img, results, img_width, img_height)
         #cv2.imshow('Video', output_q.get())
         #cv2.imshow('Video', output_q.get())
