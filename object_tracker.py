@@ -13,37 +13,6 @@ num_class = 20
 num_box = 2
 grid_size = 7
 
-def show_results(img, results, img_width, img_height):
-    img_cp = img
-    disp_console = False
-    imshow = True
-    for i in range(len(results)):
-        x = int(results[i][1])
-        y = int(results[i][2])
-        w = int(results[i][3])//2
-        h = int(results[i][4])//2
-        if disp_console : print ('    class : ' + results[i][0] + ' , [x,y,w,h]=[' + str(x) + ',' + str(y) + ',' + str(int(results[i][3])) + ',' + str(int(results[i][4]))+'], Confidence = ' + str(results[i][5]) )
-        xmin = x-w
-        xmax = x+w
-        ymin = y-h
-        ymax = y+h
-        if xmin<0:
-        	xmin = 0
-        if ymin<0:
-        	ymin = 0
-        if xmax>img_width:
-        	xmax = img_width
-        if ymax>img_height:
-        	ymax = img_height
-        if  imshow:
-        	cv2.rectangle(img_cp,(xmin,ymin),(xmax,ymax),(0,255,0),2)
-        	#print ((xmin, ymin, xmax, ymax))
-        	cv2.rectangle(img_cp,(xmin,ymin-20),(xmax,ymin),(125,125,125),-1)
-        	cv2.putText(img_cp,results[i][0] + ' : %.2f' % results[i][5],(xmin+5,ymin-7),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-    #
-    cv2.imshow('YOLO detection',img_cp)
-
-
 def interpret_output(output, img_width, img_height):
     w_img = img_width
     h_img = img_height
@@ -123,11 +92,11 @@ def worker(graph, input_q, output_q):
 def get_coordinates(results):
     """
     Get x and y coordinates from YOLO classification. Returned as dictionary from classification
-    to (x,y)
+    to [x,y]
     """
     coords = {}
     for i in range(len(results)):
-        coords[results[i][0]] = (results[i][1],results[i][2])
+        coords[results[i][0]] = [results[i][1],results[i][2]]
     print(coords)
     return coords
 
@@ -136,20 +105,15 @@ if __name__ == '__main__':
     parser.add_argument('-src', '--source', dest='video_source', type=int,
                         default=0, help='Device index of the camera.')
     parser.add_argument('-wd', '--width', dest='width', type=int,
-                        default=800, help='Width of the frames in the video stream.')
+                        default=640, help='Width of the frames in the video stream.')
     parser.add_argument('-ht', '--height', dest='height', type=int,
-                        default=600, help='Height of the frames in the video stream.')
+                        default=480, help='Height of the frames in the video stream.')
     parser.add_argument('-num-w', '--num-workers', dest='num_workers', type=int,
                         default=2, help='Number of workers.')
     parser.add_argument('-q-size', '--queue-size', dest='queue_size', type=int,
                         default=5, help='Size of the queue.')
     args = parser.parse_args()
 
-    logger = multiprocessing.log_to_stderr()
-    logger.setLevel(multiprocessing.SUBDEBUG)
-
-    input_q = Queue(maxsize=args.queue_size)
-    output_q = Queue(maxsize=args.queue_size)
     # configuration NCS
     network_blob = 'graph'
     mvnc.SetGlobalOption(mvnc.GlobalOption.LOG_LEVEL, 2)
@@ -166,33 +130,27 @@ if __name__ == '__main__':
     graph = device.AllocateGraph(blob)
     graph.SetGraphOption(mvnc.GraphOption.ITERATIONS, 1)
     iterations = graph.GetGraphOption(mvnc.GraphOption.ITERATIONS)
-    #
-    pool = Pool(args.num_workers, worker, (graph, input_q, output_q))
-    #
     video_capture = WebcamVideoStream(src=args.video_source,
                                       width=args.width,
                                       height=args.height).start()
-    fps = FPS().start()
+    
     #
+    class_to_track = None
     while True:  # fps._numFrames < 120
+        start = time.time()
         frame = video_capture.read()
-        input_q.put(frame)
-        t = time.time()
-        (img, results, img_width, img_height) = output_q.get()
+        graph.LoadTensor(resize(frame/255.0,dim,1)[:,:,(2,1,0)].astype(np.float16), 'user object')
+        out, userobj = graph.GetResult()
+        results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
         get_coordinates(results)
-        #cv2.imshow('Video', output_q.get())
-        #cv2.imshow('Video', output_q.get())
-        fps.update()
-        # print('[INFO] elapsed time: {:.2f}'.format(time.time() - t))
+        if class_to_track != None:
+            break
+        print(results)
+        end = time.time()
+        print(end - start)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
-    fps.stop()
-    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
-    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
-
-    pool.terminate()
+    
     video_capture.stop()
-    cv2.destroyAllWindows()
     graph.DeallocateGraph()
     device.CloseDevice()
