@@ -12,6 +12,7 @@ class PanTiltController:
 		self.init_pins()
 		self.stop()
 	def init_pins(self):
+		# Initializes Pins
 		gpio.setmode(gpio.BOARD)
 		gpio.setup(self.pan_pin,gpio.OUT)
 		gpio.setup(self.tilt_pin,gpio.OUT)	
