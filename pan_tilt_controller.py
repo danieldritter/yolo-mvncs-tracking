@@ -34,7 +34,6 @@ class PanTiltController:
 		
 		off_center = dir_vector
         
-        
         def close(self):
 		self.stop()
 		gpio.cleanup()
