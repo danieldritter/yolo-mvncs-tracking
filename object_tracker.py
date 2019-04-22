@@ -4,6 +4,7 @@ from mvnc import mvncapi as mvnc
 from skimage.transform import resize
 from utils.app_utils import FPS, WebcamVideoStream
 from multiprocessing import Queue, Pool
+from .pan_tilt_controller import PanTiltController
 
 classes = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train","tvmonitor"]
 dim=(448,448)
@@ -74,20 +75,6 @@ def iou(box1,box2):
 	else : intersection =  tb*lr
 	return intersection / (box1[2]*box1[3] + box2[2]*box2[3] - intersection)
 
-def worker(graph, input_q, output_q):
-    fps = FPS().start()
-    while True:
-        fps.update()
-        frame = input_q.get()
-        graph.LoadTensor(resize(frame/255.0,dim,1)[:,:,(2,1,0)].astype(np.float16), 'user object')
-        out, userobj = graph.GetResult()
-        results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
-        #print(results)
-        output_q.put((frame, results, frame.shape[1], frame.shape[0]))
-        #output_q.put((frame, [], frame.shape[1], frame.shape[0]))
-        #output_q.put(frame)
-    #
-    fps.stop()
 
 def get_coordinates(results):
     """
@@ -134,18 +121,19 @@ if __name__ == '__main__':
                                       width=args.width,
                                       height=args.height).start()
     
-    #
+    
     class_to_track = None
+    controller = PanTiltController()	
     while True:  # fps._numFrames < 120
         start = time.time()
         frame = video_capture.read()
         graph.LoadTensor(resize(frame/255.0,dim,1)[:,:,(2,1,0)].astype(np.float16), 'user object')
         out, userobj = graph.GetResult()
         results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
-        get_coordinates(results)
+        coords = get_coordinates(results)
+	controller.get_offset(coords)
         if class_to_track != None:
             break
-        print(results)
         end = time.time()
         print(end - start)
         if cv2.waitKey(1) & 0xFF == ord('q'):
