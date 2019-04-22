@@ -123,7 +123,8 @@ if __name__ == '__main__':
     
     
     class_to_track = None
-    controller = PanTiltController()	
+    controller = PanTiltController()
+    im_center = [args.width/2,args.height/2]	
     while True:  # fps._numFrames < 120
         start = time.time()
         frame = video_capture.read()
@@ -131,7 +132,10 @@ if __name__ == '__main__':
         out, userobj = graph.GetResult()
         results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
         coords = get_coordinates(results)
-	controller.get_offset(coords)
+	offset = controller.get_offset(coords)
+	if offset[0] < im_center[0] & controller.get_pan_angle() >= 2:
+		# Move
+	# 3 more cases to write here 
         if class_to_track != None:
             break
         end = time.time()

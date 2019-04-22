@@ -10,17 +10,21 @@ class PanTiltController:
 		self.im_width = 640
 		self.im_height = 480
 		self.center_point = [self.im_width/2,self.im_height/2]
+		self.pan_pwm = None 
+		self.tilt_pwm = None
 		self.init_pins()
-		self.pan_pwm = gpio.PWM(self.pan_pin,50)
-		self.tilt_pwm = gpio.PWM(self.tilt_pin,50)
 		self.stop()
 	
-	def init_pins(self):
+	def init_pins_and_servos(self):
 		# Initializes Pins
 		gpio.setmode(gpio.BOARD)
 		gpio.setup(self.pan_pin,gpio.OUT)
-		gpio.setup(self.tilt_pin,gpio.OUT)	
-	
+		gpio.setup(self.tilt_pin,gpio.OUT)
+		self.pan_pwm = gpio.PWM(self.pan_pin,50)
+		self.tilt_pwm = gpio.PWM(self.tilt_pin,50)
+		self.set_angle(self.pan_pin,self.pan_pwm,0)
+		self.set_angle(self.tilt_pin,self.tilt_pwm,0)	
+		
 	def stop(self):
 		gpio.output(self.pan_pin,False)
 		gpio.output(self.tilt_pin,False)
