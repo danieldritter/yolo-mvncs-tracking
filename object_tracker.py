@@ -4,7 +4,7 @@ from mvnc import mvncapi as mvnc
 from skimage.transform import resize
 from utils.app_utils import FPS, WebcamVideoStream
 from multiprocessing import Queue, Pool
-from .pan_tilt_controller import PanTiltController
+from pan_tilt_controller import PanTiltController
 
 classes = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train","tvmonitor"]
 dim=(448,448)
@@ -132,24 +132,24 @@ if __name__ == '__main__':
         out, userobj = graph.GetResult()
         results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
         coords = get_coordinates(results)
-	offset = controller.get_offset(coords[class_to_track])
-	if offset[0] < im_center[0] and controller.get_angle_pan() >= 5:
-		controller.set_angle_pan(controller.get_angle_pan()+2)
-	elif offset[0] < im_center[0] and controller.get_angle_pan() <= 175:
-        controller.set_angle_pan(controller.get_angle_pan()-2)
+        offset = controller.get_offset(coords[class_to_track])
+        if offset[0] < im_center[0] and controller.get_angle_pan() >= 5:
+            controller.set_angle_pan(controller.get_angle_pan()+2)
+        elif offset[0] < im_center[0] and controller.get_angle_pan() <= 175:
+            controller.set_angle_pan(controller.get_angle_pan()-2)
 
-    if offset[1] < im_center[1] and controller.get_angle_tilt() >= 5:
-        controller.set_angle_tilt(controller.get_angle_tilt()+2)
-    elif offset[1] > im_center[1] and controller.get_angle_tilt() <= 175:
-        controller.set_angle_tilt(controller.get_angle_tilt()-2)
-
-    if class_to_track != None:
-        break
+        if offset[1] < im_center[1] and controller.get_angle_tilt() >= 5:
+            controller.set_angle_tilt(controller.get_angle_tilt()+2)
+        elif offset[1] > im_center[1] and controller.get_angle_tilt() <= 175:
+            controller.set_angle_tilt(controller.get_angle_tilt()-2)
+        
+        if class_to_track != None:
+            break
         end = time.time()
         print(end - start)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
+    controller.close()
     video_capture.stop()
     graph.DeallocateGraph()
     device.CloseDevice()
