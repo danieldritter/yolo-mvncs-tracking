@@ -120,11 +120,11 @@ if __name__ == '__main__':
     video_capture = WebcamVideoStream(src=args.video_source,
                                       width=args.width,
                                       height=args.height).start()
-    
-    
-    class_to_track = None
+
+
+    class_to_track = "tvmonitor"
     controller = PanTiltController()
-    im_center = [args.width/2,args.height/2]	
+    im_center = [args.width/2,args.height/2]
     while True:  # fps._numFrames < 120
         start = time.time()
         frame = video_capture.read()
@@ -132,17 +132,24 @@ if __name__ == '__main__':
         out, userobj = graph.GetResult()
         results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
         coords = get_coordinates(results)
-	offset = controller.get_offset(coords)
-	if offset[0] < im_center[0] & controller.get_pan_angle() >= 2:
-		# Move
-	# 3 more cases to write here 
-        if class_to_track != None:
-            break
+	offset = controller.get_offset(coords[class_to_track])
+	if offset[0] < im_center[0] and controller.get_angle_pan() >= 5:
+		controller.set_angle_pan(controller.get_angle_pan()+2)
+	elif offset[0] < im_center[0] and controller.get_angle_pan() <= 175:
+        controller.set_angle_pan(controller.get_angle_pan()-2)
+
+    if offset[1] < im_center[1] and controller.get_angle_tilt() >= 5:
+        controller.set_angle_tilt(controller.get_angle_tilt()+2)
+    elif offset[1] > im_center[1] and controller.get_angle_tilt() <= 175:
+        controller.set_angle_tilt(controller.get_angle_tilt()-2)
+
+    if class_to_track != None:
+        break
         end = time.time()
         print(end - start)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    
+
     video_capture.stop()
     graph.DeallocateGraph()
     device.CloseDevice()
