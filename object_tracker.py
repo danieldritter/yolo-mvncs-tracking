@@ -134,14 +134,18 @@ if __name__ == '__main__':
             results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
             coords = get_coordinates(results)
             if class_to_track in coords.keys():
-                if coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() >= 5:
-                    controller.set_angle_pan(controller.get_angle_pan()+2)
-                elif coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() <= 175:
-                    controller.set_angle_pan(controller.get_angle_pan()-2)
-                if coords[class_to_track][1] < im_center[1] and controller.get_angle_tilt() >= 5:
-                    controller.set_angle_tilt(controller.get_angle_tilt()+2)
-                elif coords[class_to_track][1] > im_center[1] and controller.get_angle_tilt() <= 135:               
-                    controller.set_angle_tilt(controller.get_angle_tilt()-2)
+                print(controller.get_angle_pan())
+                print(controller.get_angle_tilt())
+                if abs(coords[class_to_track][0] - im_center[0] > 30):
+                    if coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() >= 32:
+                        controller.set_angle_pan(controller.get_angle_pan()+2)
+                    elif coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() <= 150:
+                        controller.set_angle_pan(controller.get_angle_pan()-2)
+                if abs(coords[class_to_track][1] - im_center[1]) > 30:
+                    if coords[class_to_track][1] < im_center[1] and controller.get_angle_tilt() >= 32:
+                        controller.set_angle_tilt(controller.get_angle_tilt()+2)
+                    elif coords[class_to_track][1] > im_center[1] and controller.get_angle_tilt() <= 150:               
+                        controller.set_angle_tilt(controller.get_angle_tilt()-2)
             end = time.time()
             print(end - start)
             if cv2.waitKey(1) & 0xFF == ord('q'):
