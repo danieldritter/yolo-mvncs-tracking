@@ -20,22 +20,23 @@ class PanTiltController:
 	# Initializes Pins
         gpio.setup(self.pan_pin,gpio.OUT)
         gpio.setup(self.tilt_pin,gpio.OUT)
-        self.pan_pwm = gpio.PWM(self.pan_pin,50)
-        self.tilt_pwm = gpio.PWM(self.tilt_pin,50)
-        self.setServoAngle(self.pan_pwm,45)
-        self.setServoAngle(self.tilt_pwm,45)
-        self.pan_angle = 45
-        self.tilt_angle = 45
+        #self.pan_pwm = gpio.PWM(self.pan_pin,50)
+        #self.tilt_pwm = gpio.PWM(self.tilt_pin,50)
+        self.setServoAngle(self.pan_pin,20)
+        self.setServoAngle(self.tilt_pin,60)
+        self.pan_angle = 20
+        self.tilt_angle = 60
+    
     def stop(self):
-        self.pan_pwm.stop()
-        self.tilt_pwm.stop()
+        #self.pan_pwm.stop()
+        #self.tilt_pwm.stop()
         #gpio.output(self.pan_pin,False)
         #gpio.output(self.tilt_pin,False)
         time.sleep(2)
     
-    def set_angle(self,servo_pin,servo_pwm,angle):
+    def set_angle(self,servo_pin,angle):
         #value = angle/90 - 1
-        
+        servo_pwm = gpio.PWM(servo_pin,50)
         duty = angle/18 + 2
         #gpio.output(servo_pin,True)
         # servo_pwm.ChangeDutyCycle(duty)
@@ -45,21 +46,22 @@ class PanTiltController:
         #servo_pwm.ChangeDutyCycle(0)
         servo_pwm.stop()
     
-    def setServoAngle(self,servo_pwm, angle):
-        assert angle >=30 and angle <= 150
+    def setServoAngle(self,servo_pin, angle):
+        #assert angle >=30 and angle <= 150
+        servo_pwm = gpio.PWM(servo_pin,50)
         servo_pwm.start(8)
         dutyCycle = angle / 18. + 3.
         servo_pwm.ChangeDutyCycle(dutyCycle)
-        time.sleep(0.3)
+        time.sleep(1)
         servo_pwm.stop()
 
     def set_angle_pan(self,angle):
-        self.setServoAngle(self.pan_pwm,angle)
+        self.setServoAngle(self.pan_pin,angle)
         #self.pan_pwm.angle = angle
         self.pan_angle = angle
     
     def set_angle_tilt(self,angle):
-        self.setServoAngle(self.tilt_pwm,angle)
+        self.setServoAngle(self.tilt_pin,angle)
         #self.tilt_pwm.angle = angle
         self.tilt_angle = angle
     
