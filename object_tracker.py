@@ -126,30 +126,29 @@ if __name__ == '__main__':
     controller = PanTiltController()
     im_center = [args.width/2,args.height/2]
     while True:  # fps._numFrames < 120
-        start = time.time()
-        frame = video_capture.read()
-        graph.LoadTensor(resize(frame/255.0,dim,1)[:,:,(2,1,0)].astype(np.float16), 'user object')
-        out, userobj = graph.GetResult()
-        results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
-        coords = get_coordinates(results)
-        offset = controller.get_offset(coords[class_to_track])
-        if offset[0] < im_center[0] and controller.get_angle_pan() >= 5:
-            controller.set_angle_pan(controller.get_angle_pan()+2)
-        elif offset[0] < im_center[0] and controller.get_angle_pan() <= 175:
-            controller.set_angle_pan(controller.get_angle_pan()-2)
-
-        if offset[1] < im_center[1] and controller.get_angle_tilt() >= 5:
-            controller.set_angle_tilt(controller.get_angle_tilt()+2)
-        elif offset[1] > im_center[1] and controller.get_angle_tilt() <= 175:
-            controller.set_angle_tilt(controller.get_angle_tilt()-2)
-        
-        if class_to_track != None:
-            break
-        end = time.time()
-        print(end - start)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    controller.close()
-    video_capture.stop()
-    graph.DeallocateGraph()
-    device.CloseDevice()
+        try:
+            start = time.time()
+            frame = video_capture.read()
+            graph.LoadTensor(resize(frame/255.0,dim,1)[:,:,(2,1,0)].astype(np.float16), 'user object')
+            out, userobj = graph.GetResult()
+            results = interpret_output(out.astype(np.float32), frame.shape[1], frame.shape[0])
+            coords = get_coordinates(results)
+            if class_to_track in coords.keys():
+                if coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() >= 5:
+                    controller.set_angle_pan(controller.get_angle_pan()+2)
+                elif coords[class_to_track][0] < im_center[0] and controller.get_angle_pan() <= 175:
+                    controller.set_angle_pan(controller.get_angle_pan()-2)
+                if coords[class_to_track][1] < im_center[1] and controller.get_angle_tilt() >= 5:
+                    controller.set_angle_tilt(controller.get_angle_tilt()+2)
+                elif coords[class_to_track][1] > im_center[1] and controller.get_angle_tilt() <= 135:               
+                    controller.set_angle_tilt(controller.get_angle_tilt()-2)
+            end = time.time()
+            print(end - start)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        except KeyboardInterrupt:
+            controller.close()
+            video_capture.stop()
+            graph.DeallocateGraph()
+            device.CloseDevice()
+            exit()
