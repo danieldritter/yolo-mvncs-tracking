@@ -6,3 +6,7 @@ Raspberry Pi 3
 
 Software Setup:
 Raspbian OS
+opencv-py
+Movidius NCS SDK Version 1.0(working on shifting to 2.0)
+pigpio
+numpy
